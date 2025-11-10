@@ -1,0 +1,60 @@
+/* Estilos personalizados para el sistema GAPC */
+.main-header {
+    color: #2E86AB;
+    text-align: center;
+    padding: 1rem;
+    border-bottom: 2px solid #2E86AB;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background-color: #F8F9FA;
+    border-radius: 10px;
+    padding: 1.5rem;
+    border-left: 4px solid #2E86AB;
+    margin-bottom: 1rem;
+}
+
+.sidebar .sidebar-content {
+    background-color: #F8F9FA;
+    background-image: linear-gradient(180deg, #F8F9FA 0%, #E9ECEF 100%);
+}
+
+/* Mejoras para las tarjetas de métricas */
+[data-testid="metric-container"] {
+    background-color: #F8F9FA;
+    border: 1px solid #DEE2E6;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+/* Estilos para los títulos de pestañas */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    white-space: pre-wrap;
+    background-color: #F8F9FA;
+    border-radius: 4px 4px 0px 0px;
+    gap: 1px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #2E86AB;
+    color: white;
+}
+
+/* Mejoras para los botones */
+.stButton button {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.stButton button:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
