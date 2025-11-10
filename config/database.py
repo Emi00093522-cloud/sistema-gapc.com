@@ -13,5 +13,20 @@ def get_connection():
         )
         return conn
     except mysql.connector.Error as e:
-        st.error(f"Error de conexión a la base de datos: {e}")
+        st.error(f"❌ Error de conexión a la base de datos: {e}")
+        st.info("💡 Verifica que las credenciales en secrets.toml sean correctas")
         return None
+
+def test_connection():
+    """Función para probar la conexión"""
+    try:
+        conn = get_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.close()
+            conn.close()
+            return True
+        return False
+    except:
+        return False
