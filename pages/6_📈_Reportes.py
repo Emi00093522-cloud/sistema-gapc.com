@@ -1,14 +1,11 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 from config.database import get_connection
-from utils.charts import create_savings_trend_chart, create_loan_status_chart
 
 def main():
     st.title("📈 Reportes y Analytics")
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard General", "💰 Reporte de Caja", "👥 Reporte por Grupo", "📋 Reportes Personalizados"])
+    tab1, tab2, tab3 = st.tabs(["📊 Dashboard General", "💰 Reporte de Caja", "👥 Reporte por Grupo"])
     
     with tab1:
         show_general_dashboard()
@@ -18,9 +15,6 @@ def main():
     
     with tab3:
         show_group_report()
-    
-    with tab4:
-        show_custom_reports()
 
 def show_general_dashboard():
     st.subheader("Dashboard General del Sistema")
@@ -46,52 +40,11 @@ def show_general_dashboard():
         total_prestamos = pd.read_sql("SELECT COALESCE(SUM(monto), 0) as total FROM Prestamo", conn).iloc[0]['total']
         st.metric("Total Préstamos", f"${total_prestamos:,.2f}")
     
-    # Gráficos
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("### Distribución de Grupos por Distrito")
-        chart_grupos_distrito(conn)
-    
-    with col2:
-        st.write("### Estado de Préstamos Global")
-        chart_estado_prestamos_global(conn)
-    
     # Tabla resumen por distrito
     st.write("### Resumen Consolidado por Distrito")
     show_resumen_distritos(conn)
     
     conn.close()
-
-def chart_grupos_distrito(conn):
-    query = """
-    SELECT d.nombre_distrito, COUNT(g.ID_Grupo) as cantidad_grupos
-    FROM Distrito d
-    LEFT JOIN Grupo g ON d.ID_Distrito = g.ID_Distrito
-    GROUP BY d.nombre_distrito
-    """
-    
-    data = pd.read_sql(query, conn)
-    
-    if not data.empty:
-        fig = px.bar(data, x='nombre_distrito', y='cantidad_grupos',
-                    title="Grupos por Distrito")
-        st.plotly_chart(fig, use_container_width=True)
-
-def chart_estado_prestamos_global(conn):
-    query = """
-    SELECT ep.estado_prestamo, COUNT(*) as cantidad, SUM(p.monto) as monto_total
-    FROM Prestamo p
-    JOIN Estado_prestamo ep ON p.ID_Estado_prestamo = ep.ID_Estado_prestamo
-    GROUP BY ep.estado_prestamo
-    """
-    
-    data = pd.read_sql(query, conn)
-    
-    if not data.empty:
-        fig = px.pie(data, values='cantidad', names='estado_prestamo',
-                    title="Distribución de Préstamos por Estado")
-        st.plotly_chart(fig, use_container_width=True)
 
 def show_resumen_distritos(conn):
     query = """
@@ -152,11 +105,6 @@ def show_cash_report():
                 saldo = ingresos - egresos
                 st.metric("Saldo Neto", f"${saldo:,.2f}")
             
-            # Gráfico
-            fig = px.bar(movimientos, x='fecha_movimiento', y='monto', color='tipo_movimiento',
-                        title="Movimientos de Caja por Fecha")
-            st.plotly_chart(fig, use_container_width=True)
-            
             # Tabla detallada
             st.dataframe(movimientos, use_container_width=True)
         else:
@@ -206,19 +154,6 @@ def show_group_report():
             ).iloc[0]['total']
             st.metric("Reuniones", reuniones_count)
         
-        # Gráficos del grupo
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            chart = create_savings_trend_chart(group_id)
-            if chart:
-                st.plotly_chart(chart, use_container_width=True)
-        
-        with col2:
-            chart = create_loan_status_chart(group_id)
-            if chart:
-                st.plotly_chart(chart, use_container_width=True)
-        
         # Detalle de miembros
         st.write("### Detalle de Miembros")
         miembros_detalle = pd.read_sql("""
@@ -233,36 +168,6 @@ def show_group_report():
         st.dataframe(miembros_detalle, use_container_width=True)
     
     conn.close()
-
-def show_custom_reports():
-    st.subheader("Reportes Personalizados")
-    
-    st.info("""
-    **Generador de Reportes Personalizados**
-    
-    Selecciona los datos que deseas incluir en tu reporte:
-    """)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        incluir_grupos = st.checkbox("Datos de Grupos")
-        incluir_miembros = st.checkbox("Datos de Miembros")
-        incluir_ahorros = st.checkbox("Datos de Ahorros")
-    
-    with col2:
-        incluir_prestamos = st.checkbox("Datos de Préstamos")
-        incluir_reuniones = st.checkbox("Datos de Reuniones")
-        incluir_multas = st.checkbox("Datos de Multas")
-    
-    formato_reporte = st.selectbox("Formato de Reporte", ["Tabla", "CSV", "Excel"])
-    
-    if st.button("Generar Reporte"):
-        if any([incluir_grupos, incluir_miembros, incluir_ahorros, incluir_prestamos, incluir_reuniones, incluir_multas]):
-            st.success("Reporte generado exitosamente! (Funcionalidad en desarrollo)")
-            # Aquí iría la lógica para generar el reporte personalizado
-        else:
-            st.warning("Selecciona al menos un tipo de dato para generar el reporte")
 
 if __name__ == "__main__":
     main()
