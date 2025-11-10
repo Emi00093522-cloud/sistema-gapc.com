@@ -23,7 +23,7 @@ def create_savings_trend_chart(group_id):
     
     if not data.empty:
         fig = px.line(data, x='fecha', y='total_ahorro', 
-                     title="Evolución de Ahorros del Grupo",
+                     title="📈 Evolución de Ahorros del Grupo",
                      labels={'fecha': 'Fecha', 'total_ahorro': 'Total Ahorrado'})
         return fig
     return None
@@ -48,6 +48,31 @@ def create_loan_status_chart(group_id):
     
     if not data.empty:
         fig = px.pie(data, values='cantidad', names='estado_prestamo',
-                    title="Distribución de Préstamos por Estado")
+                    title="📊 Distribución de Préstamos por Estado")
+        return fig
+    return None
+
+def create_income_expense_chart(group_id):
+    conn = get_connection()
+    if conn is None:
+        return None
+        
+    query = """
+    SELECT tm.tipo_movimiento, SUM(mc.monto) as total
+    FROM Movimiento_caja mc
+    JOIN Tipo_movimiento tm ON mc.ID_Tipo_movimiento = tm.ID_Tipo_movimiento
+    JOIN Reunion r ON mc.ID_Reunion = r.ID_Reunion
+    WHERE r.ID_Grupo = %s
+    GROUP BY tm.tipo_movimiento
+    """
+    
+    data = pd.read_sql(query, conn, params=(group_id,))
+    conn.close()
+    
+    if not data.empty:
+        fig = px.bar(data, x='tipo_movimiento', y='total', 
+                     color='tipo_movimiento',
+                     title="💰 Ingresos vs Egresos",
+                     labels={'tipo_movimiento': 'Tipo', 'total': 'Monto'})
         return fig
     return None
