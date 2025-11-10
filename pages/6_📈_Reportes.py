@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from config.database import get_connection
+from utils.charts import create_savings_trend_chart, create_loan_status_chart
 
 def main():
     st.title("📈 Reportes y Analytics")
@@ -20,6 +23,9 @@ def show_general_dashboard():
     st.subheader("Dashboard General del Sistema")
     
     conn = get_connection()
+    if conn is None:
+        st.error("No hay conexión a la base de datos")
+        return
     
     # Métricas principales
     col1, col2, col3, col4 = st.columns(4)
@@ -39,6 +45,38 @@ def show_general_dashboard():
     with col4:
         total_prestamos = pd.read_sql("SELECT COALESCE(SUM(monto), 0) as total FROM Prestamo", conn).iloc[0]['total']
         st.metric("Total Préstamos", f"${total_prestamos:,.2f}")
+    
+    # Gráficos
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Distribución de grupos por distrito
+        distritos_data = pd.read_sql("""
+        SELECT d.nombre_distrito, COUNT(g.ID_Grupo) as cantidad_grupos
+        FROM Distrito d
+        LEFT JOIN Grupo g ON d.ID_Distrito = g.ID_Distrito
+        GROUP BY d.nombre_distrito
+        """, conn)
+        
+        if not distritos_data.empty:
+            fig = px.bar(distritos_data, x='nombre_distrito', y='cantidad_grupos',
+                        title="📍 Grupos por Distrito",
+                        color='nombre_distrito')
+            st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # Estado de préstamos global
+        prestamos_data = pd.read_sql("""
+        SELECT ep.estado_prestamo, COUNT(*) as cantidad, SUM(p.monto) as monto_total
+        FROM Prestamo p
+        JOIN Estado_prestamo ep ON p.ID_Estado_prestamo = ep.ID_Estado_prestamo
+        GROUP BY ep.estado_prestamo
+        """, conn)
+        
+        if not prestamos_data.empty:
+            fig = px.pie(prestamos_data, values='cantidad', names='estado_prestamo',
+                        title="📊 Estado de Préstamos Global")
+            st.plotly_chart(fig, use_container_width=True)
     
     # Tabla resumen por distrito
     st.write("### Resumen Consolidado por Distrito")
@@ -70,6 +108,9 @@ def show_cash_report():
     st.subheader("Reporte de Movimientos de Caja")
     
     conn = get_connection()
+    if conn is None:
+        st.error("No hay conexión a la base de datos")
+        return
     
     # Selector de fecha
     col1, col2 = st.columns(2)
@@ -105,6 +146,13 @@ def show_cash_report():
                 saldo = ingresos - egresos
                 st.metric("Saldo Neto", f"${saldo:,.2f}")
             
+            # Gráfico de movimientos
+            movimientos_agrupados = movimientos.groupby(['fecha_movimiento', 'tipo_movimiento'])['monto'].sum().reset_index()
+            
+            fig = px.bar(movimientos_agrupados, x='fecha_movimiento', y='monto', color='tipo_movimiento',
+                        title="💰 Movimientos de Caja por Fecha", barmode='group')
+            st.plotly_chart(fig, use_container_width=True)
+            
             # Tabla detallada
             st.dataframe(movimientos, use_container_width=True)
         else:
@@ -116,6 +164,9 @@ def show_group_report():
     st.subheader("Reporte Detallado por Grupo")
     
     conn = get_connection()
+    if conn is None:
+        st.error("No hay conexión a la base de datos")
+        return
     
     grupos = pd.read_sql("SELECT ID_Grupo, nombre FROM Grupo", conn)
     
@@ -153,6 +204,19 @@ def show_group_report():
                 conn, params=(group_id,)
             ).iloc[0]['total']
             st.metric("Reuniones", reuniones_count)
+        
+        # Gráficos del grupo
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            chart = create_savings_trend_chart(group_id)
+            if chart:
+                st.plotly_chart(chart, use_container_width=True)
+        
+        with col2:
+            chart = create_loan_status_chart(group_id)
+            if chart:
+                st.plotly_chart(chart, use_container_width=True)
         
         # Detalle de miembros
         st.write("### Detalle de Miembros")
