@@ -1,8 +1,2 @@
-txt
-streamlit==1.28.0
-mysql-connector-python==8.1.0
-pandas==2.1.0
-plotly==5.17.0
-cryptography==41.0.7
-python-dotenv==1.0.0
-altair==4.2.2
+streamlit
+mysql-connector-python
