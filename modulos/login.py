@@ -33,15 +33,17 @@ def verificar_usuario(usuario, contra):
 
 def inicializar_usuarios():
     """Función para inicializar los usuarios en la base de datos"""
+    print("🟡 Inicializando usuarios...")  
     con = obtener_conexion()
     if not con:
-        print("❌ No se pudo conectar a la base de datos en inicializar_usuarios()")
+        print("❌ No se pudo obtener conexión")  
         return False
         
     try:
         cursor = con.cursor()
-        print("🔧 Verificando si la tabla Empleados existe...")
+        print("✅ Conexión abierta, creando tabla...") 
         
+        # Crear tabla de empleados si no existe
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Empleados (
                 ID_Empleado INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,8 +53,9 @@ def inicializar_usuarios():
                 Nombre VARCHAR(100) NOT NULL
             )
         """)
-        print("✅ Tabla Empleados verificada o creada correctamente.")
+        print("✅ Tabla verificada o creada.")  
         
+        # Insertar usuarios por defecto si no existen
         usuarios_default = [
             ('secretaria', 'secretaria123', 'secretaria', 'Ana García - Secretaria'),
             ('presidente', 'presidente456', 'presidente', 'Carlos López - Presidente'),
@@ -60,23 +63,23 @@ def inicializar_usuarios():
         ]
         
         for usuario, contra, tipo, nombre in usuarios_default:
+            print(f"➡ Insertando usuario: {usuario}")  
             cursor.execute(
                 "INSERT IGNORE INTO Empleados (Usuario, Contra, Tipo, Nombre) VALUES (%s, %s, %s, %s)",
                 (usuario, contra, tipo, nombre)
             )
-            print(f"🧩 Insertado usuario: {usuario} ({tipo}) si no existía.")
         
         con.commit()
-        print("💾 Cambios confirmados (commit).")
+        print("✅ Usuarios inicializados correctamente.")  
         return True
         
     except Exception as e:
-        print(f"❌ Error al inicializar usuarios: {e}")
+        print(f"❌ Error al inicializar usuarios: {e}")  
         st.error(f"Error al inicializar usuarios: {e}")
         return False
     finally:
         con.close()
-        print("🔒 Conexión cerrada en inicializar_usuarios()")
+        print("🔒 Conexión cerrada.")  # <--- nuevo
 
 def login():
     st.title("Inicio de sesión")
